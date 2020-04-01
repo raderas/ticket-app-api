@@ -24,31 +24,31 @@ import java.util.logging.Logger;
  *
  * @author azus
  */
-public class EmpresaModel extends CommonsDAO{
+public class ColaModel extends CommonsDAO{
     
     
-/* Query para obtener todos las empresas de la tabla 
+/* Query para obtener todos las colas de la tabla 
  * 
  * 
  * Ejemplo de JsonResponse
  * 
- * [{"idempresa": 10000, "nombre":"Davivienda", "nombrecorto":"Davi", "tipoempresa":3,"nit":null}, {"idempresa": 10000, "nombre":"Banco Agricola", "nombrecorto":"BA", "tipoempresa":3,"nit":null}]
+ * [{"idcola": 10000, "descripcion":"DescripcionCola", "idestablecimiento":2, "cupos":3,"ultimoatendido":null}, {"idcola": 20000, "descripcion":"DescripcionCola", "idestablecimiento":2, "cupos":3,"ultimoatendido":null}]
  * 
- * */ 
+ * */
     
-     public String obtenerTotalEmpresas() {
+     public String obtenerTotalColas() {
         String result="";
         String sql = "select\n" +
                 "	json_agg(\n" +
                 "    json_build_object(\n" +
-                "        'idempresa', e.id_empresa ,\n" +
-                "        'nombre', e.nombre ,\n" +
-                "        'nombrecorto', e.nombre_corto ,\n" +
-                "        'tipoempresa', e.id_tipo_empresa ,\n" +
-                "        'nit', e.nit \n" +
+                "        'idcola', c.id_cola ,\n" +
+                "        'descripcion', c.descripcion ,\n" +
+                "        'idestablecimiento', c.id_establecimiento ,\n" +
+                "        'cupos', c.cupos ,\n" +
+                "        'ultimoatendido', c.ultimo_atendido \n" +
                 "    )\n" +
                 "    ) as resultado\n" +
-                "FROM empresa e";
+                "FROM cola c	";
 
         try (Connection conn = DriverManager.getConnection(
                 getUrl(), getUser(), getPassword());
@@ -77,37 +77,37 @@ public class EmpresaModel extends CommonsDAO{
     }
         
      
-/* Metodo para obtener todas las empresas en base al arreglo de usuarios JSON que espera como parametro 
+/* Query para obtener todas las colas en base al arreglo de usuarios JSON que espera como parametro 
  * 
  * Ejemplo de JsonRequest
- * [{"idempresa": 10000, "nombre":null, "nombrecorto":null, "tipoempresa":null,"nit":null},{"idempresa": 10000, "nombre":null, "nombrecorto":null, "tipoempresa":null,"nit":null}]
+ * [{"idcola": 10000, "descripcion":"DescripcionCola", "idestablecimiento":2, "cupos":3,"ultimoatendido":null}, {"idcola": 20000, "descripcion":"DescripcionCola", "idestablecimiento":2, "cupos":3,"ultimoatendido":null}]
  * 
  * Ejemplo de JsonResponse
  * 
- * [{"idempresa": 10000, "nombre":"Davivienda", "nombrecorto":"Davi", "tipoempresa":3,"nit":null}, {"idempresa": 10000, "nombre":"Banco Agricola", "nombrecorto":"BA", "tipoempresa":3,"nit":null}]
+ * [{"idcola": 10000, "descripcion":"DescripcionCola", "idestablecimiento":2, "cupos":3,"ultimoatendido":null}, {"idcola": 20000, "descripcion":"DescripcionCola", "idestablecimiento":2, "cupos":3,"ultimoatendido":null}]
  * 
  * */   
      
-     public String obtenerEmpresaByID(String json) {
+     public String obtenerColaByID(String json) {
         String result="";
         String sql = "select\n" +
             "	json_agg(\n" +
             "    json_build_object(\n" +
-            "        'idempresa', e.id_empresa ,\n" +
-            "        'nombre', e.nombre ,\n" +
-            "        'nombrecorto', e.nombre_corto ,\n" +
-            "        'tipoempresa', e.id_tipo_empresa ,\n" +
-            "        'nit', e.nit \n" +
+            "        'idcola', c.id_cola ,\n" +
+            "        'descripcion', c.descripcion ,\n" +
+            "        'idestablecimiento', c.id_establecimiento ,\n" +
+            "        'cupos', c.cupos ,\n" +
+            "        'ultimoatendido', c.ultimo_atendido \n" +
             "    )\n" +
             "    ) as resultado\n" +
-            "FROM empresa e\n" +
-            "where e.id_empresa  in (select  (json_array_elements_text('"+json+"')::jsonb->'idempresa')::int4 as id)";
+            "FROM cola c\n" +
+            "where c.id_cola  in (select  (json_array_elements_text('"+json+"')::jsonb->'idcola')::int4 as id)";
 
         try (Connection conn = DriverManager.getConnection(
                 getUrl(), getUser(), getPassword());
                 PreparedStatement ps = conn.prepareStatement(sql)) {
             
-            //System.err.println("El sql generado es : "+ sql);
+            System.err.println("El sql generado es : "+ sql);
 
             ResultSet resultSet = ps.executeQuery();
             while (resultSet.next()) {
@@ -126,25 +126,24 @@ public class EmpresaModel extends CommonsDAO{
         return result;
     }
      
-/* Query para insertar la empresa enviada como parametro en un arreglo Json 
+/* Query para insertar la cola enviada como parametro en un arreglo Json 
  * 
  * Ejemplo de JsonRequest
- * [{"idempresa": 10000, "nombre":"Davivienda", "nombrecorto":"Davi", "tipoempresa":3,"nit":null}, {"idempresa": 10000, "nombre":"Banco Agricola", "nombrecorto":"BA", "tipoempresa":3,"nit":null}]
+ * [{"idcola": 10000, "descripcion":"DescripcionCola", "idestablecimiento":2, "cupos":3,"ultimoatendido":null}, {"idcola": 20000, "descripcion":"DescripcionCola", "idestablecimiento":2, "cupos":3,"ultimoatendido":null}]
  * 
  * */
      
-     
-     public String insertarEmpresa(String json) {
+     public String insertarCola(String json) {
         String result="";
-        String sql = "insert into empresa (nombre , nombre_corto , id_tipo_empresa , nit )\n" +
-                    "select trim(nombre) as nombre, trim(nombrecorto) as nombrecorto, tipoempresa::int4, trim(nit) as nit from   json_to_recordset('"+json+"')\n" +
-                    "		as x(\"idempresa\" text, \"nombre\" text, \"nombrecorto\" text, \"tipoempresa\" text, \"nit\" text)";
+        String sql = "insert into cola (descripcion , id_establecimiento , cupos , ultimo_atendido )\n" +
+            "select trim(descripcion) as descripcion, idestablecimiento::int4 as idestablecimiento, cupos::int2 as cupos, ultimoatendido::int8 as ultimoatendido from   json_to_recordset('"+json+"')\n" +
+            "		as x(\"idcola\" text, \"descripcion\" text, \"idestablecimiento\" text, \"cupos\" text, \"ultimoatendido\" text)";
 
         try (Connection conn = DriverManager.getConnection(
                 getUrl(), getUser(), getPassword());
                 PreparedStatement ps = conn.prepareStatement(sql)) {
             
-            //System.err.println("El sql generado es : "+ sql);
+            System.err.println("El sql generado es : "+ sql);
 
             ps.executeUpdate();
             
@@ -162,27 +161,27 @@ public class EmpresaModel extends CommonsDAO{
     }
      
      
-/* Query para modificar la empresa enviada como parametro en un arreglo Json 
+/* Query para modificar la cola enviada como parametro en un arreglo Json 
  * 
  * Ejemplo de JsonRequest
- * [{"idempresa": 10000, "nombre":"Davivienda", "nombrecorto":"Davi", "tipoempresa":3,"nit":null}, {"idempresa": 10000, "nombre":"Banco Agricola", "nombrecorto":"BA", "tipoempresa":3,"nit":null}]
+ * [{"idcola": 10000, "descripcion":"DescripcionCola", "idestablecimiento":2, "cupos":3,"ultimoatendido":null}, {"idcola": 20000, "descripcion":"DescripcionCola", "idestablecimiento":2, "cupos":3,"ultimoatendido":null}]
  * 
  * */	
      
      
-     public String modificarEmpresa(String json) {
+     public String modificarCola(String json) {
         String result="";
-        String sql = "UPDATE empresa\n" +
-                "SET nombre = coalesce (usRecord.nombre, empresa.nombre, usRecord.nombre), \n" +
-                "    nombre_corto = coalesce (usRecord.nombrecorto, empresa.nombre_corto , usRecord.nombrecorto),\n" +
-                "    id_tipo_empresa =coalesce (usRecord.tipoempresa::int4, empresa.id_tipo_empresa , usRecord.tipoempresa::int4),\n" +
-                "    nit =coalesce (usRecord.nit, empresa.nit , usRecord.nit)\n" +
+        String sql = "UPDATE cola\n" +
+                "SET descripcion = coalesce (usRecord.descripcion, cola.descripcion , usRecord.descripcion), \n" +
+                "    id_establecimiento = coalesce (usRecord.idestablecimiento::int4, cola.id_establecimiento, usRecord.idestablecimiento::int4),\n" +
+                "    cupos =coalesce (usRecord.cupos::int2, cola.cupos , usRecord.cupos::int2),\n" +
+                "    ultimo_atendido =coalesce (usRecord.ultimoatendido::int8, cola.ultimo_atendido , usRecord.ultimoatendido::int8)\n" +
                 "FROM (\n" +
                 "select * from   json_to_recordset('"+json+"')\n" +
-                "		as x(\"idempresa\" text, \"nombre\" text, \"nombrecorto\" text, \"tipoempresa\" text, \"nit\" text)\n" +
+                "		as x(\"idcola\" text, \"descripcion\" text, \"idestablecimiento\" text, \"cupos\" text, \"ultimoatendido\" text)\n" +
                 ") AS usRecord\n" +
                 "WHERE \n" +
-                "    usRecord.idempresa::int4 = empresa.id_empresa";
+                "    usRecord.idcola::int4 = cola.id_cola ";
 
         try (Connection conn = DriverManager.getConnection(
                 getUrl(), getUser(), getPassword());
@@ -205,20 +204,20 @@ public class EmpresaModel extends CommonsDAO{
         return result;
     }
   
- /* Query para eliminar la empresa enviada como parametro en un arreglo Json 
+ /* Query para eliminar la cola enviada como parametro en un arreglo Json 
  * 
  * Ejemplo de JsonRequest
- * [{"idempresa": 10000, "nombre":"Davivienda", "nombrecorto":"Davi", "tipoempresa":3,"nit":null}, {"idempresa": 10000, "nombre":"Banco Agricola", "nombrecorto":"BA", "tipoempresa":3,"nit":null}]
+ * [{"idcola": 10000, "descripcion":"DescripcionCola", "idestablecimiento":2, "cupos":3,"ultimoatendido":null}, {"idcola": 20000, "descripcion":"DescripcionCola", "idestablecimiento":2, "cupos":3,"ultimoatendido":null}]
  * 
- * */  
+ * */   
      
      
-     public String eliminarEmpresa(String json) {
+     public String eliminarCola(String json) {
         String result="";
-        String sql = "   delete from empresa e \n" +
-                "   where e.id_empresa in (\n" +
-                "	select idempresa::int4 from   json_to_recordset('"+json+"')\n" +
-                "			as x(\"idempresa\" text, \"nombre\" text, \"nombrecorto\" text, \"tipoempresa\" text, \"nit\" text)\n" +
+        String sql = "   delete from cola c \n" +
+                "   where c.id_cola in (\n" +
+                "	select idcola::int4 from   json_to_recordset('"+json+"')\n" +
+                "			as x(\"idcola\" text, \"descripcion\" text, \"idestablecimiento\" text, \"cupos\" text, \"ultimoatendido\" text)\n" +
                 "	)";
 
         try (Connection conn = DriverManager.getConnection(
