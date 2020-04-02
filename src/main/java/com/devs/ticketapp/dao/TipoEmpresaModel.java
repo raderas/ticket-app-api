@@ -42,7 +42,9 @@ public class TipoEmpresaModel extends CommonsDAO{
                 "	json_agg(\n" +
                 "    json_build_object(\n" +
                 "        'idtipo', te.id_tipo_empresa ,\n" +
-                "        'tipo', te.tipo_empresa \n" +
+                "        'tipo', te.tipo_empresa, \n "+
+                "        'descripcion', te.descripcion,\n" +
+                "        'imagen', te.imagen  \n   " +
                 "    )\n" +
                 "    ) as resultado\n" +
                 "FROM tipo_empresa te";
@@ -91,7 +93,9 @@ public class TipoEmpresaModel extends CommonsDAO{
             "	json_agg(\n" +
             "    json_build_object(\n" +
             "        'idtipo', te.id_tipo_empresa ,\n" +
-            "        'tipo', te.tipo_empresa \n" +
+            "        'tipo', te.tipo_empresa, \n" +
+            "        'descripcion', te.descripcion, \n" +
+            "        'imagen', te.imagen \n" +
             "    )\n" +
             "    ) as resultado\n" +
             "FROM tipo_empresa te\n" +
@@ -129,9 +133,9 @@ public class TipoEmpresaModel extends CommonsDAO{
      
      public String insertarTipoEmpresa(String json) {
         String result="";
-        String sql = "insert into tipo_empresa (tipo_empresa)\n" +
-            "select trim(tipo) as tipo from   json_to_recordset('"+json+"')\n" +
-            "		as x(\"idtipo\" text, \"tipo\" text)";
+        String sql = "insert into tipo_empresa (tipo_empresa, descripcion, imagen)\n" +
+            "select trim(tipo) as tipo, trim(descripcion) as descripcion, trim(imagen) as imagen from   json_to_recordset('"+json+"')\n" +
+            "		as x(\"idtipo\" text, \"tipo\" text, \"descripcion\" text, \"imagen\" text)";
 
         try (Connection conn = DriverManager.getConnection(
                 getUrl(), getUser(), getPassword());
@@ -166,13 +170,15 @@ public class TipoEmpresaModel extends CommonsDAO{
      public String modificarTipoEmpresa(String json) {
         String result="";
         String sql = "UPDATE tipo_empresa \n" +
-                "SET tipo_empresa = coalesce (usRecord.tipo, tipo_empresa.tipo_empresa , usRecord.tipo)\n" +
-                "FROM (\n" +
-                "select * from   json_to_recordset('"+json+"')\n" +
-                "		as x(\"idtipo\" text, \"tipo\" text)\n" +
-                ") AS usRecord\n" +
-                "WHERE \n" +
-                "    usRecord.idtipo::int4 = tipo_empresa.id_tipo_empresa ";
+            "SET tipo_empresa = coalesce (usRecord.tipo, tipo_empresa.tipo_empresa , usRecord.tipo),\n" +
+            "	descripcion = coalesce (usRecord.descripcion, tipo_empresa.descripcion , usRecord.descripcion),\n" +
+            "	imagen = coalesce (usRecord.imagen, tipo_empresa.imagen , usRecord.imagen)\n" +
+            "FROM (\n" +
+            "select * from   json_to_recordset('"+json+"')\n" +
+            "		as x(\"idtipo\" text, \"tipo\" text, \"descripcion\" text, \"imagen\" text)\n" +
+            ") AS usRecord\n" +
+            "WHERE \n" +
+            "    usRecord.idtipo::int4 = tipo_empresa.id_tipo_empresa ";
 
         try (Connection conn = DriverManager.getConnection(
                 getUrl(), getUser(), getPassword());
